@@ -198,8 +198,8 @@ initial = [[1, 2, 3],
 # Solvable Final configuration
 # Value 0 is used for empty space
 final = [[1, 2, 3],
-         [5, 8, 6],
-         [0, 7, 4]]
+         [4, 5, 6],
+         [7, 8, 0]]
 
 # Blank tile coordinates in
 # initial configuration
