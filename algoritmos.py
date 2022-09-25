@@ -17,7 +17,7 @@ moves = list()
 costs = set()
 
 
-def bfs(start_state):
+def usc(start_state):
 
     global max_frontier_size, goal_node, max_search_depth
 
@@ -339,7 +339,7 @@ def main():
 
 
 function_map = {
-    'bfs': bfs,
+    'bfs': usc,
     'dfs': dfs,
     'ast': ast,
     'ida': ida
