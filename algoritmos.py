@@ -1,5 +1,6 @@
 import argparse
 import itertools
+import timeit
 from collections import deque
 from heapq import heappush, heappop, heapify
 from state import State
@@ -293,7 +294,7 @@ def backtrace():
     return moves
 
 
-def export(frontier):
+def export(frontier, time):
 
     global moves
 
@@ -307,6 +308,7 @@ def export(frontier):
     file.write("\nTamanho maximo da fronteira: " + str(max_frontier_size))
     file.write("\nProfundidade da busca: " + str(goal_node.depth))
     file.write("\nProfundidade maxima da busca: " + str(max_search_depth))
+    file.write("\nTempo gasto em ms: " + format(time, '.8f'))
     file.close()
 
 
@@ -330,8 +332,10 @@ def main():
     args = parser.parse_args()
     read(args.inicio)
     function = function_map[args.algoritmo]
+    start = timeit.default_timer()
+    stop = timeit.default_timer()
     frontier = function(initial_state)
-    export(frontier)
+    export(frontier, stop-start)
 
 
 function_map = {
