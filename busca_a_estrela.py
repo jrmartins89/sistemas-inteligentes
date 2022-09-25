@@ -1,9 +1,6 @@
 import argparse
 import itertools
-import timeit
-from collections import deque
 from heapq import heappush, heappop, heapify
-
 from state import State
 
 goal_state = [1, 2, 3, 4, 5, 6, 7, 8, 0]
@@ -11,73 +8,12 @@ goal_node = State
 initial_state = list()
 board_len = 0
 board_side = 0
-
 nodes_expanded = 0
 max_search_depth = 0
 max_frontier_size = 0
 
 moves = list()
 costs = set()
-
-
-def bfs(start_state):
-
-    global max_frontier_size, goal_node, max_search_depth
-
-    explored, queue = set(), deque([State(start_state, None, None, 0, 0, 0)])
-
-    while queue:
-
-        node = queue.popleft()
-
-        explored.add(node.map)
-
-        if node.state == goal_state:
-            goal_node = node
-            return queue
-
-        neighbors = expand(node)
-
-        for neighbor in neighbors:
-            if neighbor.map not in explored:
-                queue.append(neighbor)
-                explored.add(neighbor.map)
-
-                if neighbor.depth > max_search_depth:
-                    max_search_depth += 1
-
-        if len(queue) > max_frontier_size:
-            max_frontier_size = len(queue)
-
-
-def dfs(start_state):
-
-    global max_frontier_size, goal_node, max_search_depth
-
-    explored, stack = set(), list([State(start_state, None, None, 0, 0, 0)])
-
-    while stack:
-
-        node = stack.pop()
-
-        explored.add(node.map)
-
-        if node.state == goal_state:
-            goal_node = node
-            return stack
-
-        neighbors = reversed(expand(node))
-
-        for neighbor in neighbors:
-            if neighbor.map not in explored:
-                stack.append(neighbor)
-                explored.add(neighbor.map)
-
-                if neighbor.depth > max_search_depth:
-                    max_search_depth += 1
-
-        if len(stack) > max_frontier_size:
-            max_frontier_size = len(stack)
 
 
 def ast(start_state):
@@ -139,24 +75,6 @@ def ast(start_state):
 
         if len(heap) > max_frontier_size:
             max_frontier_size = len(heap)
-
-
-def ida(start_state):
-
-    global costs
-
-    threshold = h(start_state)
-
-    while 1:
-        response = dls_mod(start_state, threshold)
-
-        if type(response) is list:
-            return response
-            break
-
-        threshold = response
-
-        costs = set()
 
 
 def dls_mod(start_state, threshold):
@@ -340,8 +258,5 @@ def main():
 
 
 function_map = {
-    'bfs': bfs,
-    'dfs': dfs,
     'ast': ast,
-    'ida': ida
 }
