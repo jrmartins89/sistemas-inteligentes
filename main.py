@@ -1,5 +1,4 @@
-from busca_a_estrela import solve
+from busca_a_estrela import main
 
 if __name__ == "__main__":
-    print('entre com o estado inicial da matriz')
-    solve()
+    main()

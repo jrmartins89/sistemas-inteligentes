@@ -1,211 +1,358 @@
-# Python3 program to print the path from root
-# node to destination node for N*N-1 puzzle
-# algorithm using Branch and Bound
-# The solution assumes that instance of
-# puzzle is solvable
+import argparse
+import itertools
+import timeit
+from collections import deque
+from heapq import heappush, heappop, heapify
 
-# Importing copy for deepcopy function
-import copy
+from state import State
 
-# Importing the heap functions from python
-# library for Priority Queue
-from heapq import heappush, heappop
+goal_state = [1, 2, 3, 4, 5, 6, 7, 8, 0]
+goal_node = State
+initial_state = list()
+board_len = 0
+board_side = 0
 
-# This variable can be changed to change
-# the program from 8 puzzle(n=3) to 15
-# puzzle(n=4) to 24 puzzle(n=5)...
-n = 3
+nodes_expanded = 0
+max_search_depth = 0
+max_frontier_size = 0
 
-# bottom, left, top, right
-row = [1, 0, -1, 0]
-col = [0, -1, 0, 1]
+moves = list()
+costs = set()
 
 
-# A class for Priority Queue
-class priorityQueue:
+def bfs(start_state):
 
-    # Constructor to initialize a
-    # Priority Queue
-    def __init__(self):
-        self.heap = []
+    global max_frontier_size, goal_node, max_search_depth
 
-    # Inserts a new key 'k'
-    def push(self, k):
-        heappush(self.heap, k)
+    explored, queue = set(), deque([State(start_state, None, None, 0, 0, 0)])
 
-    # Method to remove minimum element
-    # from Priority Queue
-    def pop(self):
-        return heappop(self.heap)
+    while queue:
 
-    # Method to know if the Queue is empty
-    def empty(self):
-        if not self.heap:
-            return True
+        node = queue.popleft()
+
+        explored.add(node.map)
+
+        if node.state == goal_state:
+            goal_node = node
+            return queue
+
+        neighbors = expand(node)
+
+        for neighbor in neighbors:
+            if neighbor.map not in explored:
+                queue.append(neighbor)
+                explored.add(neighbor.map)
+
+                if neighbor.depth > max_search_depth:
+                    max_search_depth += 1
+
+        if len(queue) > max_frontier_size:
+            max_frontier_size = len(queue)
+
+
+def dfs(start_state):
+
+    global max_frontier_size, goal_node, max_search_depth
+
+    explored, stack = set(), list([State(start_state, None, None, 0, 0, 0)])
+
+    while stack:
+
+        node = stack.pop()
+
+        explored.add(node.map)
+
+        if node.state == goal_state:
+            goal_node = node
+            return stack
+
+        neighbors = reversed(expand(node))
+
+        for neighbor in neighbors:
+            if neighbor.map not in explored:
+                stack.append(neighbor)
+                explored.add(neighbor.map)
+
+                if neighbor.depth > max_search_depth:
+                    max_search_depth += 1
+
+        if len(stack) > max_frontier_size:
+            max_frontier_size = len(stack)
+
+
+def ast(start_state):
+
+    global max_frontier_size, goal_node, max_search_depth
+
+    explored, heap, heap_entry, counter = set(), list(), {}, itertools.count()
+
+    key = h(start_state)
+
+    root = State(start_state, None, None, 0, 0, key)
+
+    entry = (key, 0, root)
+
+    heappush(heap, entry)
+
+    heap_entry[root.map] = entry
+
+    while heap:
+
+        node = heappop(heap)
+
+        explored.add(node[2].map)
+
+        if node[2].state == goal_state:
+            goal_node = node[2]
+            return heap
+
+        neighbors = expand(node[2])
+
+        for neighbor in neighbors:
+
+            neighbor.key = neighbor.cost + h(neighbor.state)
+
+            entry = (neighbor.key, neighbor.move, neighbor)
+
+            if neighbor.map not in explored:
+
+                heappush(heap, entry)
+
+                explored.add(neighbor.map)
+
+                heap_entry[neighbor.map] = entry
+
+                if neighbor.depth > max_search_depth:
+                    max_search_depth += 1
+
+            elif neighbor.map in heap_entry and neighbor.key < heap_entry[neighbor.map][2].key:
+
+                hindex = heap.index((heap_entry[neighbor.map][2].key,
+                                     heap_entry[neighbor.map][2].move,
+                                     heap_entry[neighbor.map][2]))
+
+                heap[int(hindex)] = entry
+
+                heap_entry[neighbor.map] = entry
+
+                heapify(heap)
+
+        if len(heap) > max_frontier_size:
+            max_frontier_size = len(heap)
+
+
+def ida(start_state):
+
+    global costs
+
+    threshold = h(start_state)
+
+    while 1:
+        response = dls_mod(start_state, threshold)
+
+        if type(response) is list:
+            return response
+            break
+
+        threshold = response
+
+        costs = set()
+
+
+def dls_mod(start_state, threshold):
+
+    global max_frontier_size, goal_node, max_search_depth, costs
+
+    explored, stack = set(), list([State(start_state, None, None, 0, 0, threshold)])
+
+    while stack:
+
+        node = stack.pop()
+
+        explored.add(node.map)
+
+        if node.state == goal_state:
+            goal_node = node
+            return stack
+
+        if node.key > threshold:
+            costs.add(node.key)
+
+        if node.depth < threshold:
+
+            neighbors = reversed(expand(node))
+
+            for neighbor in neighbors:
+                if neighbor.map not in explored:
+
+                    neighbor.key = neighbor.cost + h(neighbor.state)
+                    stack.append(neighbor)
+                    explored.add(neighbor.map)
+
+                    if neighbor.depth > max_search_depth:
+                        max_search_depth += 1
+
+            if len(stack) > max_frontier_size:
+                max_frontier_size = len(stack)
+
+    return min(costs)
+
+
+def expand(node):
+
+    global nodes_expanded
+    nodes_expanded += 1
+
+    neighbors = list()
+
+    neighbors.append(State(move(node.state, 1), node, 1, node.depth + 1, node.cost + 1, 0))
+    neighbors.append(State(move(node.state, 2), node, 2, node.depth + 1, node.cost + 1, 0))
+    neighbors.append(State(move(node.state, 3), node, 3, node.depth + 1, node.cost + 1, 0))
+    neighbors.append(State(move(node.state, 4), node, 4, node.depth + 1, node.cost + 1, 0))
+
+    nodes = [neighbor for neighbor in neighbors if neighbor.state]
+
+    return nodes
+
+
+def move(state, position):
+
+    new_state = state[:]
+
+    index = new_state.index(0)
+
+    if position == 1:  # Up
+
+        if index not in range(0, board_side):
+
+            temp = new_state[index - board_side]
+            new_state[index - board_side] = new_state[index]
+            new_state[index] = temp
+
+            return new_state
         else:
-            return False
+            return None
+
+    if position == 2:  # Down
+
+        if index not in range(board_len - board_side, board_len):
+
+            temp = new_state[index + board_side]
+            new_state[index + board_side] = new_state[index]
+            new_state[index] = temp
+
+            return new_state
+        else:
+            return None
+
+    if position == 3:  # Left
+
+        if index not in range(0, board_len, board_side):
+
+            temp = new_state[index - 1]
+            new_state[index - 1] = new_state[index]
+            new_state[index] = temp
+
+            return new_state
+        else:
+            return None
+
+    if position == 4:  # Right
+
+        if index not in range(board_side - 1, board_len, board_side):
+
+            temp = new_state[index + 1]
+            new_state[index + 1] = new_state[index]
+            new_state[index] = temp
+
+            return new_state
+        else:
+            return None
 
 
-# Node structure
-class node:
+def h(state):
 
-    def __init__(self, parent, mat, empty_tile_pos,
-                 cost, level):
-        # Stores the parent node of the
-        # current node helps in tracing
-        # path when the answer is found
-        self.parent = parent
-
-        # Stores the matrix
-        self.mat = mat
-
-        # Stores the position at which the
-        # empty space tile exists in the matrix
-        self.empty_tile_pos = empty_tile_pos
-
-        # Stores the number of misplaced tiles
-        self.cost = cost
-
-        # Stores the number of moves so far
-        self.level = level
-
-    # This method is defined so that the
-    # priority queue is formed based on
-    # the cost variable of the objects
-    def __lt__(self, nxt):
-        return self.cost < nxt.cost
+    return sum(abs(b % board_side - g % board_side) + abs(b//board_side - g//board_side)
+               for b, g in ((state.index(i), goal_state.index(i)) for i in range(1, board_len)))
 
 
-# Function to calculate the number of
-# misplaced tiles ie. number of non-blank
-# tiles not in their goal position
-def calculateCost(mat, final) -> int:
-    count = 0
-    for i in range(n):
-        for j in range(n):
-            if ((mat[i][j]) and
-                    (mat[i][j] != final[i][j])):
-                count += 1
+def backtrace():
 
-    return count
+    current_node = goal_node
 
+    while initial_state != current_node.state:
 
-def newNode(mat, empty_tile_pos, new_empty_tile_pos,
-            level, parent, final) -> node:
-    # Copy data from parent matrix to current matrix
-    new_mat = copy.deepcopy(mat)
+        if current_node.move == 1:
+            movement = 'Up'
+        elif current_node.move == 2:
+            movement = 'Down'
+        elif current_node.move == 3:
+            movement = 'Left'
+        else:
+            movement = 'Right'
 
-    # Move tile by 1 position
-    x1 = empty_tile_pos[0]
-    y1 = empty_tile_pos[1]
-    x2 = new_empty_tile_pos[0]
-    y2 = new_empty_tile_pos[1]
-    new_mat[x1][y1], new_mat[x2][y2] = new_mat[x2][y2], new_mat[x1][y1]
+        moves.insert(0, movement)
+        current_node = current_node.parent
 
-    # Set number of misplaced tiles
-    cost = calculateCost(new_mat, final)
-
-    new_node = node(parent, new_mat, new_empty_tile_pos,
-                    cost, level)
-    return new_node
+    return moves
 
 
-# Function to print the N x N matrix
-def printMatrix(mat):
-    for i in range(n):
-        for j in range(n):
-            print("%d " % (mat[i][j]), end=" ")
+def export(frontier, time):
 
-        print()
+    global moves
 
+    moves = backtrace()
 
-# Function to check if (x, y) is a valid
-# matrix coordinate
-def isSafe(x, y):
-    return x >= 0 and x < n and y >= 0 and y < n
-
-
-# Print path from root node to destination node
-def printPath(root):
-    if root == None:
-        return
-
-    printPath(root.parent)
-    printMatrix(root.mat)
-    print()
+    file = open('output.txt', 'w')
+    file.write("path_to_goal: " + str(moves))
+    file.write("\ncost_of_path: " + str(len(moves)))
+    file.write("\nnodes_expanded: " + str(nodes_expanded))
+    file.write("\nfringe_size: " + str(len(frontier)))
+    file.write("\nmax_fringe_size: " + str(max_frontier_size))
+    file.write("\nsearch_depth: " + str(goal_node.depth))
+    file.write("\nmax_search_depth: " + str(max_search_depth))
+    file.write("\nrunning_time: " + format(time, '.8f'))
+    file.close()
 
 
-# Function to solve N*N - 1 puzzle algorithm
-# using Branch and Bound. empty_tile_pos is
-# the blank tile position in the initial state.
-def solve(initial, empty_tile_pos, final):
-    # Create a priority queue to store live
-    # nodes of search tree
-    pq = priorityQueue()
+def read(configuration):
 
-    # Create the root node
-    cost = calculateCost(initial, final)
-    root = node(None, initial,
-                empty_tile_pos, cost, 0)
+    global board_len, board_side
 
-    # Add root to list of live nodes
-    pq.push(root)
+    data = configuration.split(",")
 
-    # Finds a live node with least cost,
-    # add its children to list of live
-    # nodes and finally deletes it from
-    # the list.
-    while not pq.empty():
+    for element in data:
+        initial_state.append(int(element))
 
-        # Find a live node with least estimated
-        # cost and delete it form the list of
-        # live nodes
-        minimum = pq.pop()
+    board_len = len(initial_state)
 
-        # If minimum is the answer node
-        if minimum.cost == 0:
-            # Print the path from root to
-            # destination;
-            printPath(minimum)
-            return
-
-        # Generate all possible children
-        for i in range(4):
-            new_tile_pos = [
-                minimum.empty_tile_pos[0] + row[i],
-                minimum.empty_tile_pos[1] + col[i], ]
-
-            if isSafe(new_tile_pos[0], new_tile_pos[1]):
-                # Create a child node
-                child = newNode(minimum.mat,
-                                minimum.empty_tile_pos,
-                                new_tile_pos,
-                                minimum.level + 1,
-                                minimum, final, )
-
-                # Add child to list of live nodes
-                pq.push(child)
+    board_side = int(board_len ** 0.5)
 
 
-# Driver Code
+def main():
 
-# Initial configuration
-# Value 0 is used for empty space
-initial = [[1, 2, 3],
-           [5, 6, 0],
-           [7, 8, 4]]
+    parser = argparse.ArgumentParser()
 
-# Solvable Final configuration
-# Value 0 is used for empty space
-final = [[1, 2, 3],
-         [4, 5, 6],
-         [7, 8, 0]]
+    parser.add_argument('algorithm')
+    parser.add_argument('board')
+    args = parser.parse_args()
 
-# Blank tile coordinates in
-# initial configuration
-empty_tile_pos = [1, 2]
+    read(args.board)
 
-# Function call to solve the puzzle
-solve(initial, empty_tile_pos, final)
+    function = function_map[args.algorithm]
 
-# This code is contributed by Kevin Joshi
+    start = timeit.default_timer()
+
+    frontier = function(initial_state)
+
+    stop = timeit.default_timer()
+
+    export(frontier, stop-start)
+
+
+function_map = {
+    'bfs': bfs,
+    'dfs': dfs,
+    'ast': ast,
+    'ida': ida
+}
