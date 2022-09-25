@@ -1,5 +1,6 @@
 import argparse
 import itertools
+from collections import deque
 from heapq import heappush, heappop, heapify
 from state import State
 
@@ -11,9 +12,68 @@ board_side = 0
 nodes_expanded = 0
 max_search_depth = 0
 max_frontier_size = 0
-
 moves = list()
 costs = set()
+
+
+def bfs(start_state):
+
+    global max_frontier_size, goal_node, max_search_depth
+
+    explored, queue = set(), deque([State(start_state, None, None, 0, 0, 0)])
+
+    while queue:
+
+        node = queue.popleft()
+
+        explored.add(node.map)
+
+        if node.state == goal_state:
+            goal_node = node
+            return queue
+
+        neighbors = expand(node)
+
+        for neighbor in neighbors:
+            if neighbor.map not in explored:
+                queue.append(neighbor)
+                explored.add(neighbor.map)
+
+                if neighbor.depth > max_search_depth:
+                    max_search_depth += 1
+
+        if len(queue) > max_frontier_size:
+            max_frontier_size = len(queue)
+
+
+def dfs(start_state):
+
+    global max_frontier_size, goal_node, max_search_depth
+
+    explored, stack = set(), list([State(start_state, None, None, 0, 0, 0)])
+
+    while stack:
+
+        node = stack.pop()
+
+        explored.add(node.map)
+
+        if node.state == goal_state:
+            goal_node = node
+            return stack
+
+        neighbors = reversed(expand(node))
+
+        for neighbor in neighbors:
+            if neighbor.map not in explored:
+                stack.append(neighbor)
+                explored.add(neighbor.map)
+
+                if neighbor.depth > max_search_depth:
+                    max_search_depth += 1
+
+        if len(stack) > max_frontier_size:
+            max_frontier_size = len(stack)
 
 
 def ast(start_state):
@@ -77,6 +137,63 @@ def ast(start_state):
             max_frontier_size = len(heap)
 
 
+def ida(start_state):
+
+    global costs
+
+    threshold = h(start_state)
+
+    while 1:
+        response = dls_mod(start_state, threshold)
+
+        if type(response) is list:
+            return response
+            break
+
+        threshold = response
+
+        costs = set()
+
+
+def dls_mod(start_state, threshold):
+
+    global max_frontier_size, goal_node, max_search_depth, costs
+
+    explored, stack = set(), list([State(start_state, None, None, 0, 0, threshold)])
+
+    while stack:
+
+        node = stack.pop()
+
+        explored.add(node.map)
+
+        if node.state == goal_state:
+            goal_node = node
+            return stack
+
+        if node.key > threshold:
+            costs.add(node.key)
+
+        if node.depth < threshold:
+
+            neighbors = reversed(expand(node))
+
+            for neighbor in neighbors:
+                if neighbor.map not in explored:
+
+                    neighbor.key = neighbor.cost + h(neighbor.state)
+                    stack.append(neighbor)
+                    explored.add(neighbor.map)
+
+                    if neighbor.depth > max_search_depth:
+                        max_search_depth += 1
+
+            if len(stack) > max_frontier_size:
+                max_frontier_size = len(stack)
+
+    return min(costs)
+
+
 def expand(node):
 
     global nodes_expanded
@@ -100,7 +217,7 @@ def move(state, position):
 
     index = new_state.index(0)
 
-    if position == 1:  # Up
+    if position == 1:  # Cima
 
         if index not in range(0, board_side):
 
@@ -112,7 +229,7 @@ def move(state, position):
         else:
             return None
 
-    if position == 2:  # Down
+    if position == 2:  # Baixo
 
         if index not in range(board_len - board_side, board_len):
 
@@ -124,7 +241,7 @@ def move(state, position):
         else:
             return None
 
-    if position == 3:  # Left
+    if position == 3:  # Esquerda
 
         if index not in range(0, board_len, board_side):
 
@@ -136,7 +253,7 @@ def move(state, position):
         else:
             return None
 
-    if position == 4:  # Right
+    if position == 4:  # Direita
 
         if index not in range(board_side - 1, board_len, board_side):
 
@@ -176,13 +293,13 @@ def backtrace():
     return moves
 
 
-def export(frontier):
+def export(frontier, time):
 
     global moves
 
     moves = backtrace()
 
-    file = open('output.txt', 'w')
+    file = open('Resolucao.txt', 'w')
     file.write("Movimentos: " + str(moves))
     file.write("\nCusto da solucao: " + str(len(moves)))
     file.write("\nNodos expandidos: " + str(nodes_expanded))
@@ -203,7 +320,6 @@ def read(configuration):
         initial_state.append(int(element))
 
     board_len = len(initial_state)
-
     board_side = int(board_len ** 0.5)
 
 
@@ -219,5 +335,8 @@ def main():
 
 
 function_map = {
-    'ast': ast
+    'bfs': bfs,
+    'dfs': dfs,
+    'ast': ast,
+    'ida': ida
 }
