@@ -293,7 +293,7 @@ def backtrace():
     return moves
 
 
-def export(frontier, time):
+def export(frontier):
 
     global moves
 
@@ -340,3 +340,6 @@ function_map = {
     'ast': ast,
     'ida': ida
 }
+
+if __name__ == '__main__':
+    main()
