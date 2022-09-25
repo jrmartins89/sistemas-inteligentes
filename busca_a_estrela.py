@@ -283,13 +283,13 @@ def backtrace():
     while initial_state != current_node.state:
 
         if current_node.move == 1:
-            movement = 'Up'
+            movement = 'cima'
         elif current_node.move == 2:
-            movement = 'Down'
+            movement = 'baixo'
         elif current_node.move == 3:
-            movement = 'Left'
+            movement = 'esquerda'
         else:
-            movement = 'Right'
+            movement = 'direita'
 
         moves.insert(0, movement)
         current_node = current_node.parent
@@ -304,14 +304,13 @@ def export(frontier, time):
     moves = backtrace()
 
     file = open('output.txt', 'w')
-    file.write("path_to_goal: " + str(moves))
-    file.write("\ncost_of_path: " + str(len(moves)))
-    file.write("\nnodes_expanded: " + str(nodes_expanded))
-    file.write("\nfringe_size: " + str(len(frontier)))
-    file.write("\nmax_fringe_size: " + str(max_frontier_size))
-    file.write("\nsearch_depth: " + str(goal_node.depth))
-    file.write("\nmax_search_depth: " + str(max_search_depth))
-    file.write("\nrunning_time: " + format(time, '.8f'))
+    file.write("Movimentos: " + str(moves))
+    file.write("\nCusto da solucao: " + str(len(moves)))
+    file.write("\nNodos expandidos: " + str(nodes_expanded))
+    file.write("\nTamanho da fronteira: " + str(len(frontier)))
+    file.write("\nTamanho maximo da fronteira: " + str(max_frontier_size))
+    file.write("\nProfundidade da busca: " + str(goal_node.depth))
+    file.write("\nProfundidade maxima da busca: " + str(max_search_depth))
     file.close()
 
 
@@ -333,13 +332,13 @@ def main():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('algorithm')
-    parser.add_argument('board')
+    parser.add_argument('algoritmo')
+    parser.add_argument('inicio')
     args = parser.parse_args()
 
-    read(args.board)
+    read(args.inicio)
 
-    function = function_map[args.algorithm]
+    function = function_map[args.algoritmo]
 
     start = timeit.default_timer()
 
