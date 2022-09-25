@@ -77,45 +77,6 @@ def ast(start_state):
             max_frontier_size = len(heap)
 
 
-def dls_mod(start_state, threshold):
-
-    global max_frontier_size, goal_node, max_search_depth, costs
-
-    explored, stack = set(), list([State(start_state, None, None, 0, 0, threshold)])
-
-    while stack:
-
-        node = stack.pop()
-
-        explored.add(node.map)
-
-        if node.state == goal_state:
-            goal_node = node
-            return stack
-
-        if node.key > threshold:
-            costs.add(node.key)
-
-        if node.depth < threshold:
-
-            neighbors = reversed(expand(node))
-
-            for neighbor in neighbors:
-                if neighbor.map not in explored:
-
-                    neighbor.key = neighbor.cost + h(neighbor.state)
-                    stack.append(neighbor)
-                    explored.add(neighbor.map)
-
-                    if neighbor.depth > max_search_depth:
-                        max_search_depth += 1
-
-            if len(stack) > max_frontier_size:
-                max_frontier_size = len(stack)
-
-    return min(costs)
-
-
 def expand(node):
 
     global nodes_expanded
