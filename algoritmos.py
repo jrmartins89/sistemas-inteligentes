@@ -47,36 +47,6 @@ def ucs(start_state):
             max_frontier_size = len(queue)
 
 
-def dfs(start_state):
-
-    global max_frontier_size, goal_node, max_search_depth
-
-    explored, stack = set(), list([State(start_state, None, None, 0, 0, 0)])
-
-    while stack:
-
-        node = stack.pop()
-
-        explored.add(node.map)
-
-        if node.state == goal_state:
-            goal_node = node
-            return stack
-
-        neighbors = reversed(expand(node))
-
-        for neighbor in neighbors:
-            if neighbor.map not in explored:
-                stack.append(neighbor)
-                explored.add(neighbor.map)
-
-                if neighbor.depth > max_search_depth:
-                    max_search_depth += 1
-
-        if len(stack) > max_frontier_size:
-            max_frontier_size = len(stack)
-
-
 def ast(start_state):
 
     global max_frontier_size, goal_node, max_search_depth
@@ -340,7 +310,6 @@ def main():
 
 function_map = {
     'ucs': ucs,
-    'dfs': dfs,
     'ast': ast,
     'ida': ida
 }
