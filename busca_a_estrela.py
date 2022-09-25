@@ -258,5 +258,5 @@ def main():
 
 
 function_map = {
-    'ast': ast,
+    'ast': ast
 }
