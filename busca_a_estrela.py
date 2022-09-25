@@ -297,7 +297,7 @@ def backtrace():
     return moves
 
 
-def export(frontier, time):
+def export(frontier):
 
     global moves
 
@@ -329,24 +329,14 @@ def read(configuration):
 
 
 def main():
-
     parser = argparse.ArgumentParser()
-
     parser.add_argument('algoritmo')
     parser.add_argument('inicio')
     args = parser.parse_args()
-
     read(args.inicio)
-
     function = function_map[args.algoritmo]
-
-    start = timeit.default_timer()
-
     frontier = function(initial_state)
-
-    stop = timeit.default_timer()
-
-    export(frontier, stop-start)
+    export(frontier)
 
 
 function_map = {
