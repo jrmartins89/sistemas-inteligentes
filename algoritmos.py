@@ -313,6 +313,3 @@ function_map = {
     'ast': ast,
     'ida': ida
 }
-
-if __name__ == '__main__':
-    main()
