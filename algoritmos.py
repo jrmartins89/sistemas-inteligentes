@@ -277,7 +277,6 @@ def export(frontier, time):
     file.write("\nTamanho da fronteira: " + str(len(frontier)))
     file.write("\nTamanho maximo da fronteira: " + str(max_frontier_size))
     file.write("\nProfundidade da busca: " + str(goal_node.depth))
-    file.write("\nProfundidade maxima da busca: " + str(max_search_depth))
     file.write("\nTempo gasto em ms: " + format(time, '.8f'))
     file.close()
 
